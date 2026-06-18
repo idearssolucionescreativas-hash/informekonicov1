@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0D12">
+<title>KONICO · Meta Ads Performance</title>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#0B0D12;
+  --surface:#141924;
+  --surface-2:#1B2231;
+  --hairline:rgba(255,255,255,.08);
+  --text:#F2F5FA;
+  --text-2:#9AA4B6;
+  --text-3:#5E6878;
+  --blue:#0A84FF;        /* tráfico */
+  --orange:#FF9F0A;      /* ventas / costo */
+  --green:#30D158;       /* positivo */
+  --red:#FF453A;         /* crítico */
+  --yellow:#FF8C00;      /* advertencia → naranja */
+  --teal:#64D2FF;
+  --purple:#BF5AF2;
+  --radius-l:22px;
+  --radius-m:16px;
+  --pad:clamp(14px,2.5vw,24px);
+  --tap:44px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#F2F3F7; --surface:#FFFFFF; --surface-2:#EEF0F5;
+    --hairline:rgba(20,25,40,.09);
+    --text:#10131A; --text-2:#5A6373; --text-3:#9AA1AF;
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  font-family:var(--font);
+  background:var(--bg); color:var(--text);
+  min-height:100vh; min-height:100dvh;
+  padding-bottom:max(28px, env(safe-area-inset-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(10,132,255,.35)}
+
+/* ============ HEADER ============ */
+header{
+  position:sticky; top:0; z-index:50;
+  background:color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:1px solid var(--hairline);
+  padding:calc(10px + env(safe-area-inset-top)) var(--pad) 10px;
+}
+.hd-row{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;min-height:var(--tap);min-width:0;flex:1}
+.brand h1{font-size:clamp(20px,2.4vw,26px);font-weight:800;letter-spacing:-.03em}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);box-shadow:0 0 12px var(--blue);align-self:center}
+.brand small{color:var(--text-2);font-size:13px;font-weight:600}
+.live-cpr{margin-left:auto;text-align:right;flex:none;max-width:55%}
+.live-cpr .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.live-cpr .val{font-family:var(--mono);font-size:clamp(14px,3.5vw,21px);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ============ LAYOUT ============ */
+main{max-width:1280px;margin:0 auto;padding:18px var(--pad) 0;display:grid;gap:18px}
+@media(min-width:1800px){ main{max-width:1520px} :root{--radius-l:26px} body{font-size:17px} }
+
+/* ============ FILTERS ============ */
+.filters{display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center}
+.seg{
+  display:flex;background:var(--surface-2);border-radius:13px;padding:3px;gap:2px;
+  border:1px solid var(--hairline);
+}
+.seg button{
+  appearance:none;border:0;background:transparent;color:var(--text-2);
+  font:600 14px/1 var(--font); padding:0 16px; min-height:38px; min-width:var(--tap);
+  border-radius:10px; cursor:pointer; transition:background .22s ease,color .22s ease;
+}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  appearance:none;border:1px solid var(--hairline);background:var(--surface);
+  color:var(--text-2);font:600 13px/1 var(--font);
+  min-height:38px;padding:0 15px;border-radius:999px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;
+  transition:border-color .2s,color .2s,background .2s;
+}
+.chip .sw{width:8px;height:8px;border-radius:50%}
+.chip.on{color:var(--text);border-color:currentColor}
+.chip[data-k="trafico"].on{color:var(--blue)} .chip[data-k="ventas"].on{color:var(--orange)}
+.chip[data-k="todas"].on{color:var(--text)}
+
+/* ============ KPI CARDS ============ */
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr);gap:16px}}
+.kpi{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-l);
+  padding:16px 16px 12px;position:relative;overflow:hidden;
+  animation:rise .5s cubic-bezier(.2,.7,.2,1) both;
+}
+.kpi:nth-child(2){animation-delay:.05s}.kpi:nth-child(3){animation-delay:.1s}.kpi:nth-child(4){animation-delay:.15s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.kpi .k-lbl{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3)}
+.kpi .k-val{font-family:var(--mono);font-size:clamp(22px,3.4vw,32px);font-weight:700;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .k-sub{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:12.5px;font-weight:600;color:var(--text-2)}
+.badge{font-family:var(--mono);font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:999px}
+.badge.up{color:var(--green);background:rgba(48,209,88,.13)}
+.badge.down{color:var(--red);background:rgba(255,69,58,.13)}
+.kpi svg.spark{position:absolute;right:10px;bottom:8px;opacity:.9}
+
+/* ============ CARDS ============ */
+.card{
+  background:var(--surface);border:1px solid var(--hairline);border-radius:var(--radius-l);
+  padding:var(--pad);
+}
+.card h2{font-size:clamp(16px,1.9vw,19px);font-weight:800;letter-spacing:-.02em}
+.card .sub{color:var(--text-2);font-size:13.5px;margin-top:3px;line-height:1.45}
+.c-head{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.c-head .seg{margin-left:auto}
+
+/* scrub readout */
+.readout{
+  display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;min-height:34px;
+  font-variant-numeric:tabular-nums;margin:2px 0 6px;
+}
+.readout .r-m{font-size:13px;font-weight:700;color:var(--text-2)}
+.readout .r-v{font-family:var(--mono);font-weight:700;font-size:clamp(16px,2vw,20px)}
+.readout .r-v.c1{color:var(--teal)} .readout .r-v.c2{color:var(--red)} .readout .r-v.c3{color:var(--text)}
+
+/* leyenda de gráfica */
+.legend{display:flex;gap:8px 18px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;font-weight:600;color:var(--text-2)}
+.legend .li{display:inline-flex;align-items:center;gap:7px;min-height:24px}
+.legend .sw-bar{width:14px;height:14px;border-radius:4px;flex:none}
+.legend .sw-line{width:20px;height:0;border-top:3px solid;border-radius:2px;flex:none;position:relative}
+.legend .sw-line::after{content:"";position:absolute;left:50%;top:-5px;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:var(--surface);border:2.5px solid;border-color:inherit}
+.legend .axis{color:var(--text-3);font-weight:600}
+.chart-wrap{position:relative;touch-action:pan-y}
+canvas{width:100%;display:block}
+.hint{font-size:12px;color:var(--text-3);margin-top:8px;text-align:center}
+
+/* two-col zone */
+.grid2{display:grid;gap:18px}
+@media(min-width:960px){.grid2{grid-template-columns:7fr 5fr}}
+
+/* ============ FUNNEL ============ */
+.funnel{display:grid;gap:10px;margin-top:6px}
+.f-row{display:grid;grid-template-columns:clamp(80px,22vw,108px) 1fr auto;gap:8px;align-items:center;min-height:var(--tap)}
+.f-lbl{font-size:13px;font-weight:700;color:var(--text-2)}
+.f-bar{height:30px;border-radius:9px;background:var(--surface-2);overflow:hidden;position:relative}
+.f-fill{height:100%;border-radius:9px;width:0;transition:width 1s cubic-bezier(.2,.7,.2,1)}
+.f-val{font-family:var(--mono);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.f-rate{grid-column:2/4;font-size:12px;color:var(--text-3);margin:-4px 0 2px;padding-left:2px}
+.f-rate b{color:var(--text-2)}
+
+/* ============ CAMPAIGN TABLE ============ */
+.tbl{width:100%;border-collapse:collapse;margin-top:6px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);text-align:right;padding:9px 8px;border-bottom:1px solid var(--hairline)}
+.tbl th:first-child,.tbl td:first-child{text-align:left;padding-left:2px}
+.tbl td{padding:12px 8px;font-size:13.5px;border-bottom:1px solid var(--hairline);text-align:right;font-family:var(--mono);font-weight:600}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .name{font-family:var(--font);font-weight:700;display:flex;align-items:center;gap:8px}
+.tbl .name .sw{width:8px;height:8px;border-radius:50%;flex:none}
+.tbl .tag{font-family:var(--font);font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-top:2px}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 calc(var(--pad)*-1);padding:0 var(--pad)}
+
+/* ============ ALERTS / DIAGNÓSTICO ============ */
+#diag .c-head{margin-bottom:14px}
+.sev-legend{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap}
+.sev-legend span{font-size:11.5px;font-weight:700;color:var(--text-2);display:inline-flex;align-items:center;gap:6px}
+.sev-legend i{width:9px;height:9px;border-radius:50%}
+.alerts{display:grid;gap:12px}
+@media(min-width:960px){.alerts{grid-template-columns:1fr 1fr}}
+.alert{
+  background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--radius-m);
+  overflow:hidden;position:relative;
+}
+.alert::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--sev)}
+.alert.crit{--sev:var(--red)} .alert.warn{--sev:var(--yellow)} .alert.opp{--sev:var(--green)}
+.a-btn{
+  appearance:none;border:0;background:transparent;color:inherit;width:100%;text-align:left;
+  font-family:inherit;cursor:pointer;padding:15px 16px 15px 18px;min-height:var(--tap);
+  display:flex;gap:12px;align-items:flex-start;
+}
+.pulse{width:11px;height:11px;border-radius:50%;background:var(--sev);flex:none;margin-top:4px;position:relative}
+.alert.crit .pulse::after{
+  content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--sev);
+  opacity:.7;animation:pulse 1.8s ease-out infinite;
+}
+@keyframes pulse{from{transform:scale(.6);opacity:.8}to{transform:scale(1.5);opacity:0}}
+.a-tt{flex:1}
+.a-tt h3{font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+.a-tt .a-kpi{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--sev);margin-top:3px}
+.a-chev{flex:none;margin-top:3px;color:var(--text-3);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+.alert.open .a-chev{transform:rotate(90deg)}
+.a-body{
+  display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.2,.7,.2,1);
+}
+.alert.open .a-body{grid-template-rows:1fr}
+.a-inner{overflow:hidden}
+.a-inner > div{padding:0 18px 16px 41px;display:grid;gap:10px}
+.a-sec b{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:3px}
+.a-sec p{font-size:13.5px;line-height:1.55;color:var(--text-2)}
+.a-sec.act p{color:var(--text)}
+.a-sec.act{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:11px 13px}
+
+/* ============ VALIDACIÓN INTERNA ============ */
+.valid{border:1px solid rgba(255,214,10,.25)}
+.v-question{
+  display:flex;gap:14px;align-items:flex-start;
+  background:linear-gradient(135deg, rgba(255,214,10,.10), rgba(255,159,10,.06));
+  border:1px dashed rgba(255,214,10,.45);
+  border-radius:var(--radius-m);padding:15px 16px;margin-bottom:6px;
+}
+.v-q-mark{
+  flex:none;width:34px;height:34px;border-radius:50%;
+  background:var(--yellow);color:#1A1400;font:800 19px/34px var(--font);text-align:center;
+}
+.v-question p{font-size:14.5px;line-height:1.55;color:var(--text);font-weight:600}
+.v-input{
+  appearance:none;-webkit-appearance:none;width:clamp(72px,20vw,96px);min-height:var(--tap);
+  background:var(--surface);border:1.5px solid var(--hairline);border-radius:12px;
+  color:var(--text);font:700 15px var(--mono);text-align:right;padding:0 12px;
+  transition:border-color .2s;
+}
+.v-input:focus{outline:none;border-color:var(--yellow)}
+.v-input::placeholder{color:var(--text-3);font-weight:600}
+#validTable td .calc{color:var(--green)}
+#validTable td .empty{color:var(--text-3)}
+.v-foot{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.v-totals{font-size:13.5px;color:var(--text-2);font-weight:600;flex:1;min-width:220px;font-variant-numeric:tabular-nums}
+.v-totals b{color:var(--text);font-family:var(--mono)}
+.v-copy{
+  appearance:none;border:0;cursor:pointer;min-height:var(--tap);padding:0 20px;
+  border-radius:13px;background:var(--yellow);color:#1A0A00;
+  font:700 14px var(--font);transition:transform .15s ease, filter .2s;
+}
+.v-copy:active{transform:scale(.96)}
+.v-copy.ok{background:var(--green);color:#04230F}
+
+footer{max-width:1280px;margin:10px auto 0;padding:10px var(--pad) 0}
+.footer-source{color:var(--text-3);font-size:11.5px;line-height:1.6;text-align:center;margin-bottom:18px}
+.footer-brand{
+  display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;
+  padding:18px var(--pad);
+  background:linear-gradient(135deg,rgba(10,132,255,.12),rgba(191,90,242,.12));
+  border:1px solid rgba(191,90,242,.2);
+  border-radius:var(--radius-l);
+  margin-bottom:max(18px,env(safe-area-inset-bottom));
+}
+.footer-logo{display:flex;align-items:center;flex:none}
+.footer-text{
+  font-size:clamp(14px,2vw,17px);font-weight:600;letter-spacing:-.01em;
+  background:linear-gradient(90deg,#0A84FF,#BF5AF2);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.footer-text strong{font-weight:900;letter-spacing:-.02em}
+.footer-text em{font-style:normal;font-weight:400}
+.footer-sep{color:var(--text-3);font-size:16px;flex:none}
+.footer-contact{
+  font-size:clamp(13px,1.8vw,15px);font-weight:700;
+  background:linear-gradient(90deg,#BF5AF2,#0A84FF);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  text-decoration:none;letter-spacing:.01em;
+}
+.footer-contact:hover{opacity:.8}
+
+
+/* ============ OBSERVACIONES ============ */
+.obs-wrap{
+  margin-top:22px;padding-top:20px;
+  border-top:1px solid var(--hairline);
+  display:grid;gap:18px;
+}
+.obs-title{display:flex;gap:14px;align-items:flex-start}
+.obs-icon{font-size:28px;line-height:1;flex:none;margin-top:2px}
+.obs-title h3{font-size:clamp(15px,1.8vw,18px);font-weight:800;letter-spacing:-.02em}
+.obs-title p{font-size:13px;color:var(--text-2);margin-top:3px;font-weight:600}
+.obs-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:700px){.obs-metrics{grid-template-columns:repeat(4,1fr)}}
+.obs-m{background:var(--surface-2);border:1px solid var(--hairline);border-radius:14px;
+  padding:13px 14px;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}
+.obs-m::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mc)}
+.obs-m.red{--mc:var(--red)} .obs-m.yellow{--mc:var(--yellow)} .obs-m.green{--mc:var(--green)}
+.obs-m-val{font-family:var(--mono);font-size:clamp(18px,2.4vw,24px);font-weight:700;color:var(--mc);font-variant-numeric:tabular-nums}
+.obs-m-lbl{font-size:12px;color:var(--text-2);font-weight:600;line-height:1.4}
+.obs-blocks{display:grid;gap:14px}
+@media(min-width:900px){.obs-blocks{grid-template-columns:1fr 1fr}}
+.obs-block{background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--radius-m);padding:16px 17px}
+.obs-block-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+.obs-dot{width:9px;height:9px;border-radius:50%;flex:none;margin-top:5px;background:var(--dc)}
+.obs-dot.red{--dc:var(--red)} .obs-dot.yellow{--dc:var(--yellow)} .obs-dot.green{--dc:var(--green)}
+.obs-block-head strong{font-size:14px;font-weight:800;line-height:1.35;letter-spacing:-.01em}
+.obs-block p{font-size:13px;line-height:1.6;color:var(--text-2)}
+.obs-block p strong{color:var(--text);font-weight:700}
+.obs-mejoras-title{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);padding-bottom:6px;border-bottom:1px solid var(--hairline)}
+.obs-mejoras{display:grid;gap:10px}
+.obs-mejora{display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:start;
+  background:var(--surface-2);border:1px solid var(--hairline);border-radius:var(--radius-m);padding:14px 16px}
+.obs-num{font-family:var(--mono);font-size:20px;font-weight:800;color:var(--purple);line-height:1;padding-top:2px}
+.obs-mejora strong{display:block;font-size:14px;font-weight:800;margin-bottom:5px;line-height:1.3}
+.obs-mejora p{font-size:13px;line-height:1.6;color:var(--text-2);font-weight:600}
+.obs-mejora p strong{color:var(--text)}
+.obs-footer{font-size:11.5px;color:var(--text-3);text-align:center;padding-top:4px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+button:focus-visible,.chip:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* ============ AJUSTES MÓVIL (≤480px) ============ */
+@media(max-width:480px){
+  .hd-row{gap:8px}
+  .kpi .k-val{font-size:20px}
+  .readout{gap:10px}
+  .readout .r-v{font-size:15px}
+  .seg button{padding:0 11px;font-size:13px}
+  .chip{padding:0 12px;font-size:12px}
+  .f-lbl{font-size:12px}
+  .tbl th,.tbl td{padding:8px 6px;font-size:12px}
+  .obs-m-val{font-size:18px}
+  .obs-block-head strong{font-size:13px}
+  .obs-block p,.obs-mejora p{font-size:12.5px}
+  .a-tt h3{font-size:13.5px}
+  .brand small{display:none}
+}
+@media(max-width:380px){
+  .live-cpr .lbl{display:none}
+  .live-cpr .val{font-size:13px}
+}
+
+/* ============ TOOLTIP GRÁFICAS ============ */
+.chart-tip{
+  position:absolute;pointer-events:none;z-index:20;
+  background:var(--surface);border:1px solid var(--hairline);
+  border-radius:14px;padding:10px 14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.45);
+  min-width:140px;max-width:220px;
+  transition:opacity .18s ease, transform .18s ease;
+  opacity:0;transform:translateY(4px);
+}
+.chart-tip.show{opacity:1;transform:translateY(0)}
+.chart-tip-month{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.chart-tip-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px}
+.chart-tip-lbl{font-size:12.5px;font-weight:600;color:var(--text-2)}
+.chart-tip-val{font-family:var(--mono);font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.chart-tip-nota{font-size:11px;color:var(--text-3);margin-top:6px;border-top:1px solid var(--hairline);padding-top:5px;line-height:1.4}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd-row">
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>KONICO</h1>
+      <small>Meta Ads · Ene–May 2026</small>
+    </div>
+    <div class="live-cpr">
+      <div class="lbl">Costo/resultado mayo</div>
+      <div class="val" style="color:var(--red)">$2.687 <span style="font-size:12px;color:var(--text-3)">▲ +107% vs ene</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- FILTROS -->
+  <section class="filters" aria-label="Filtros">
+    <div class="seg" role="tablist" aria-label="Periodo" id="segPeriod">
+      <button class="on" data-p="all" role="tab" aria-selected="true">Semestre</button>
+      <button data-p="q1" role="tab" aria-selected="false">Ene–Mar</button>
+      <button data-p="q2" role="tab" aria-selected="false">Abr–May</button>
+      <button data-p="may" role="tab" aria-selected="false">Mayo</button>
+    </div>
+    <div class="chips" id="chipsType" aria-label="Tipo de campaña">
+      <button class="chip on" data-k="todas"><span class="sw" style="background:var(--text-2)"></span>Todas</button>
+      <button class="chip" data-k="ventas"><span class="sw" style="background:var(--orange)"></span>Ventas</button>
+      <button class="chip" data-k="trafico"><span class="sw" style="background:var(--blue)"></span>Tráfico</button>
+    </div>
+  </section>
+
+  <!-- KPIs -->
+  <section class="kpis" id="kpis" aria-label="Indicadores clave"></section>
+
+  <!-- GRÁFICA PRINCIPAL -->
+  <section class="card">
+    <div class="c-head">
+      <div>
+        <h2>Inversión vs. resultados</h2>
+        <p class="sub">Importe gastado mes a mes, contrastado con el costo por resultado. Cambia a «Conversaciones» para ver el volumen.</p>
+      </div>
+      <div class="seg" id="segChart">
+        <button class="on" data-m="inv">Inversión</button>
+        <button data-m="dual">Conversaciones</button>
+      </div>
+    </div>
+    <div class="readout" id="readout" aria-live="polite">
+      <span class="r-m" id="roMonth">Semestre</span>
+      <span><span class="r-m">Inversión </span><span class="r-v c3" id="roSpend">$6,20M</span></span>
+      <span><span class="r-m">Conversaciones </span><span class="r-v c1" id="roConv">2.715</span></span>
+      <span><span class="r-m">Costo/resultado </span><span class="r-v c2" id="roCpr">$1.976</span></span>
+    </div>
+    <div class="legend" id="chartLegend" aria-hidden="false"></div>
+    <div class="chart-wrap" style="position:relative">
+      <canvas id="mainChart" height="300" aria-label="Gráfica de conversaciones y costo por resultado"></canvas>
+      <div class="chart-tip" id="mainTip"></div>
+    </div>
+    <p class="hint">Eje izquierdo = barras · eje derecho = línea de costo. Desliza el dedo o el cursor sobre la gráfica para ver los valores exactos de cada mes</p>
+  </section>
+
+  <!-- CRECIMIENTO DE COMUNIDAD -->
+  <section class="card">
+    <div class="c-head">
+      <div>
+        <h2>Crecimiento de seguidores vs. inversión</h2>
+        <p class="sub">Nuevos seguidores de Instagram por mes contra el presupuesto invertido. El crecimiento no sigue al gasto: sigue al tipo de campaña activa.</p>
+      </div>
+    </div>
+    <div class="legend">
+      <span class="li"><span class="sw-bar" style="background:var(--purple)"></span>Nuevos seguidores <span class="axis">· eje izq (cantidad)</span></span>
+      <span class="li"><span class="sw-line" style="color:var(--orange);border-color:var(--orange)"></span>Inversión mensual <span class="axis">· eje der (millones COP)</span></span>
+    </div>
+    <div class="readout" aria-live="polite">
+      <span class="r-m" id="cmMonth">Semestre</span>
+      <span><span class="r-m">Seguidores </span><span class="r-v" style="color:var(--purple)" id="cmSeg">4.872</span></span>
+      <span><span class="r-m">Inversión </span><span class="r-v c3" id="cmInv">$5,37M</span></span>
+      <span><span class="r-m">Costo/seguidor </span><span class="r-v" style="color:var(--teal)" id="cmCps">$1.101</span></span>
+    </div>
+    <div class="chart-wrap" style="position:relative"><canvas id="comChart" aria-label="Seguidores nuevos vs inversión mensual"></canvas><div class="chart-tip" id="comTip"></div></div>
+    <p class="hint">Abril (campaña de tráfico activa) generó el 64% del crecimiento del semestre a $397 por seguidor — 6,5× más barato que marzo. En mayo el gasto subió +51% pero los seguidores cayeron −72%.</p>
+
+    <!-- OBSERVACIONES Y ANÁLISIS -->
+    <div class="obs-wrap">
+
+      <div class="obs-title">
+        <span class="obs-icon" aria-hidden="true">📊</span>
+        <div>
+          <h3>Observaciones y análisis estratégico</h3>
+          <p>¿Está siendo eficiente la inversión en crecimiento de comunidad?</p>
+        </div>
+      </div>
+
+      <!-- DIAGNÓSTICO VISUAL: tarjetas de métricas clave -->
+      <div class="obs-metrics">
+        <div class="obs-m red">
+          <span class="obs-m-val">+107%</span>
+          <span class="obs-m-lbl">sube el costo/seguidor Ene→May</span>
+        </div>
+        <div class="obs-m red">
+          <span class="obs-m-val">87%</span>
+          <span class="obs-m-lbl">del gasto va a campañas de ventas, no de crecimiento</span>
+        </div>
+        <div class="obs-m yellow">
+          <span class="obs-m-val">1,4%</span>
+          <span class="obs-m-lbl">tasa de interacción sobre visualizaciones del semestre</span>
+        </div>
+        <div class="obs-m green">
+          <span class="obs-m-val">$397</span>
+          <span class="obs-m-lbl">costo por seguidor en abril — fórmula ganadora probada</span>
+        </div>
+      </div>
+
+      <!-- BLOQUES DE ANÁLISIS -->
+      <div class="obs-blocks">
+
+        <div class="obs-block">
+          <div class="obs-block-head"><span class="obs-dot red"></span><strong>Más plata no siempre significa más seguidores</strong></div>
+          <p>En enero, febrero y marzo se invirtieron entre <strong>$728K y $791K por mes</strong>, y el resultado fueron apenas <strong>286 a 327 seguidores nuevos</strong> cada mes. Eso es pagar entre <strong>$2.319 y $2.586 por cada persona que le dio follow</strong> a la cuenta — una cifra bastante alta si lo comparamos con lo que pasó en abril. Ese mes, con la campaña enfocada en tráfico, el costo bajó a <strong>$397 por seguidor</strong> y se ganó el <strong>64% del crecimiento de todo el semestre en solo 30 días</strong>. ¿La lección? No es cuánto se invierte, sino en qué tipo de campaña se pone ese dinero.</p>
+        </div>
+
+        <div class="obs-block">
+          <div class="obs-block-head"><span class="obs-dot red"></span><strong>Las campañas estuvieron en piloto automático demasiado tiempo</strong></div>
+          <p>Durante los primeros tres meses, todo bajó — visualizaciones, alcance, interacciones, visitas al perfil — y el presupuesto siguió igual. Eso pasa cuando se deja una misma campaña corriendo por más de <strong>90 días sin revisarla</strong>. Piénsalo así: si le pones el mismo anuncio a la misma persona más de 3 veces, deja de verlo. Eso exactamente pasó aquí — el promedio fue de <strong>3,05 impactos por persona</strong>. La audiencia se saturó, los resultados se encarecieron y nadie intervino. <strong>Una campaña sin seguimiento activo se deteriora sola, y se lleva las métricas orgánicas con ella.</strong></p>
+        </div>
+
+        <div class="obs-block">
+          <div class="obs-block-head"><span class="obs-dot yellow"></span><strong>Mucha gente lo vio, pero nadie reaccionó</strong></div>
+          <p>En cinco meses hubo casi <strong>488.000 visualizaciones</strong>. Suena bien. El problema es que de esas casi medio millón de vistas, solo <strong>7.079 fueron interacciones</strong> — un 1,4%. Eso quiere decir que la gente veía el contenido y seguía de largo, sin comentar, sin guardar, sin compartir. Y eso importa porque Instagram le da más alcance gratuito a las cuentas que generan reacción. Si la audiencia no participa, el algoritmo tampoco ayuda. <strong>Se está pagando por llegar, pero no se está conectando.</strong></p>
+        </div>
+
+        <div class="obs-block">
+          <div class="obs-block-head"><span class="obs-dot yellow"></span><strong>El contenido de abril funcionó, pero nadie sabe por qué</strong></div>
+          <p>Abril fue el mejor mes del semestre en casi todo: seguidores, interacciones, visitas al perfil. Pero no hay registro de qué se publicó, qué formato se usó o qué llamado a la acción tuvo ese contenido. Por eso en mayo no se pudo repetir. Es como hacer una receta sin anotar los ingredientes — si queda rica, no la vas a poder volver a hacer igual. <strong>Lo que no se documenta no se puede mejorar ni escalar.</strong></p>
+        </div>
+
+      </div>
+
+      <div class="obs-footer">
+        Análisis basado en datos de Instagram Insights (ene–may 2026) e inversión publicitaria de Meta Ads reportada por la cuenta.
+      </div>
+
+    </div>
+  </section>
+
+  <div class="grid2">
+    <!-- TABLA CAMPAÑAS -->
+    <section class="card">
+      <div class="c-head">
+        <div>
+          <h2>Campañas del periodo</h2>
+          <p class="sub">CPC de ventas 8–10× más caro que tráfico; el CTR confirma que el creativo de tráfico es el activo fuerte.</p>
+        </div>
+      </div>
+      <div class="scroll-x">
+        <table class="tbl" id="campTable">
+          <thead><tr><th>Campaña</th><th>Inversión</th><th>Clics</th><th>CPC</th><th>CTR</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- EMBUDO -->
+    <section class="card">
+      <div class="c-head">
+        <div>
+          <h2>Embudo del semestre</h2>
+          <p class="sub">Medido solo hasta la conversación. El tramo conversación → venta no tiene datos.</p>
+        </div>
+      </div>
+      <div class="funnel" id="funnel"></div>
+    </section>
+  </div>
+
+  <!-- VALIDACIÓN INTERNA -->
+  <section class="card valid">
+    <div class="c-head">
+      <div>
+        <h2>Validación interna · equipo KONICO</h2>
+        <p class="sub">Este dato no existe en Meta: solo el equipo comercial puede aportarlo.</p>
+      </div>
+    </div>
+    <div class="v-question">
+      <span class="v-q-mark" aria-hidden="true">?</span>
+      <p>¿Cuántos <b>pedidos reales</b> se generaron a partir del total de WhatsApps o conversaciones iniciadas durante cada mes?</p>
+    </div>
+    <div class="scroll-x" style="margin-top:6px">
+      <table class="tbl" id="validTable">
+        <thead><tr><th>Mes</th><th>Conversaciones</th><th>Pedidos reales</th><th>Tasa de cierre</th><th>Costo por pedido</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="v-foot">
+      <div class="v-totals" id="vTotals">Completa los pedidos de al menos un mes para calcular la tasa de cierre y el costo real por pedido.</div>
+      <button class="v-copy" id="vCopy">Copiar solicitud para el equipo</button>
+    </div>
+    <p class="hint" style="text-align:left;margin-top:10px">Con este dato cerramos el embudo: pasamos de medir conversaciones (rendimiento de Meta) a medir pedidos (calidad del lead + efectividad del proceso comercial). Los valores ingresados viven solo en esta sesión; usa «Copiar solicitud» para enviarla por WhatsApp o correo.</p>
+  </section>
+
+  <!-- DIAGNÓSTICO -->
+  <section class="card" id="diag">
+    <div class="c-head">
+      <div>
+        <h2>Diagnóstico · puntos críticos</h2>
+        <p class="sub">Toca cada tarjeta para ver causa probable y acción recomendada.</p>
+      </div>
+      <div class="sev-legend">
+        <span><i style="background:var(--red)"></i>Crítico</span>
+        <span><i style="background:var(--yellow)"></i>Advertencia</span>
+        <span><i style="background:var(--green)"></i>Oportunidad</span>
+      </div>
+    </div>
+    <div class="alerts" id="alerts"></div>
+  </section>
+
+</main>
+
+<footer>
+  <p class="footer-source">Fuente: INFORME-SEMESTRE-TRAFICO.xlsx · INFORME-SEMESTRE-VENTAS.xlsx · costos por resultado mensuales reportados por la cuenta. Los clics mensuales de ventas se prorratean por gasto (la exportación no incluyó desglose temporal). Alcance total suma alcances por campaña y puede contener solapamiento.</p>
+  <div class="footer-brand">
+    <span class="footer-logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+        <rect width="18" height="18" rx="5" fill="url(#fg)"/>
+        <path d="M4 13V5h4a4 4 0 0 1 0 8H4Z" fill="#fff" opacity=".9"/>
+        <circle cx="13" cy="9" r="2" fill="#fff" opacity=".7"/>
+        <defs><linearGradient id="fg" x1="0" y1="0" x2="18" y2="18" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#0A84FF"/><stop offset="1" stop-color="#BF5AF2"/>
+        </linearGradient></defs>
+      </svg>
+    </span>
+    <span class="footer-text">
+      Hecho por <strong>DATA</strong><em>pro</em> Marketing Analytic
+    </span>
+    <span class="footer-sep" aria-hidden="true">·</span>
+    <a class="footer-contact" href="tel:+573215959404">📞 321 595 9404</a>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ================= DATOS REALES KONICO ================= */
+const MONTHS = ["Ene","Feb","Mar","Abr","May"];
+const D = {
+  ventas: {
+    conv:  [583, 446, 450, 545, 691],
+    cpr:   [1301, 1634, 1758, 2257, 2687],
+    spend: [758483, 728764, 791100, 1230065, 1856717],
+    clicks:[871, 837, 909, 1413, 2134]            // prorrateo por gasto (total 6.164)
+  },
+  trafico: {
+    spend: [0,0,0,662570,167972],
+    clicks:[0,0,0,6336,2606]
+  },
+  camps: [
+    {n:"VENTAS ANTERIOR", t:"ventas", tag:"OUTCOME_SALES · Antioquia · 152 días", spend:3800750, clicks:4664, cpc:814.9, ctr:2.95},
+    {n:"0426 WHATSAPP ESTEBAN", t:"ventas", tag:"OUTCOME_SALES · Antioquia · ~45 días", spend:1564583, clicks:1500, cpc:1043.1, ctr:2.62},
+    {n:"0426 TRAFICO ESTEBAN", t:"trafico", tag:"LINK_CLICKS · Antioquia · ~13 días", spend:662570, clicks:6336, cpc:104.6, ctr:5.37},
+    {n:"0526 EXPECTATIVA TULUA", t:"trafico", tag:"LINK_CLICKS · Valle del Cauca · ~6 días", spend:167972, clicks:2606, cpc:64.5, ctr:6.13}
+  ],
+  funnel: { alcance:367781, impresiones:878300, clics:15106, conversaciones:2715 }
+};
+const PERIODS = { all:[0,4], q1:[0,2], q2:[3,4], may:[4,4] };
+
+/* ================= HELPERS ================= */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const nf = new Intl.NumberFormat("es-CO");
+const fmt$ = v => "$" + nf.format(Math.round(v));
+const fmtM = v => v>=1e6 ? "$"+(v/1e6).toFixed(2).replace(".",",")+"M" : fmt$(v);
+const sum = (a,i0,i1) => a.slice(i0,i1+1).reduce((x,y)=>x+y,0);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let state = { period:"all", type:"todas", chart:"inv", scrub:null };
+
+/* ================= KPIs ================= */
+function spark(values, color){
+  const w=78, h=30, min=Math.min(...values), max=Math.max(...values), r=(max-min)||1;
+  const pts = values.map((v,i)=>`${(i/(values.length-1))*w},${h-3-((v-min)/r)*(h-7)}`).join(" ");
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function renderKPIs(){
+  const [a,b] = PERIODS[state.period];
+  const showV = state.type!=="trafico", showT = state.type!=="ventas";
+  const conv   = showV ? sum(D.ventas.conv,a,b) : 0;
+  const spendV = showV ? sum(D.ventas.spend,a,b) : 0;
+  const spendT = showT ? sum(D.trafico.spend,a,b) : 0;
+  const spend  = spendV + spendT;
+  const clicks = (showV?sum(D.ventas.clicks,a,b):0) + (showT?sum(D.trafico.clicks,a,b):0);
+  const cpr    = conv ? spendV/conv : null;
+  const cpc    = clicks ? spend/clicks : null;
+  const slice  = arr => arr.slice(a,b+1);
+  const dCpr   = (showV && b>a) ? (D.ventas.cpr[b]/D.ventas.cpr[a]-1)*100 : null;
+  const dConv  = (showV && b>a) ? (D.ventas.conv[b]/D.ventas.conv[a]-1)*100 : null;
+
+  const cards = [
+    { l:"Inversión", v:fmtM(spend), sub:`${MONTHS[a]}–${MONTHS[b]} · ${state.type==="todas"?"todas las campañas":state.type}`,
+      sp: spark(slice(D.ventas.spend.map((s,i)=>(showV?s:0)+(showT?D.trafico.spend[i]:0))), css("--text-3")) },
+    { l:"Conversaciones", v: showV? nf.format(conv) : "—",
+      badge: dConv!=null ? {v:dConv, goodUp:true} : null,
+      sub: showV? "iniciadas por WhatsApp" : "sin datos en tráfico",
+      sp: showV? spark(slice(D.ventas.conv), css("--teal")) : "" },
+    { l:"Costo por resultado", v: cpr? fmt$(cpr):"—",
+      badge: dCpr!=null ? {v:dCpr, goodUp:false} : null,
+      sub: cpr? "promedio del periodo" : "aplica solo a ventas",
+      sp: showV? spark(slice(D.ventas.cpr), css("--red")) : "" },
+    { l:"Clics en enlace", v:nf.format(clicks),
+      sub: cpc? `CPC medio ${fmt$(cpc)}` : "",
+      sp: spark(slice(D.ventas.clicks.map((c,i)=>(showV?c:0)+(showT?D.trafico.clicks[i]:0))), css("--blue")) }
+  ];
+  $("#kpis").innerHTML = cards.map(c=>{
+    let badge="";
+    if(c.badge){
+      const up=c.badge.v>=0, good = up===c.badge.goodUp;
+      badge = `<span class="badge ${good?"up":"down"}">${up?"▲":"▼"} ${Math.abs(c.badge.v).toFixed(1).replace(".",",")}%</span>`;
+    }
+    return `<article class="kpi">
+      <div class="k-lbl">${c.l}</div>
+      <div class="k-val">${c.v}</div>
+      <div class="k-sub">${badge}${c.sub}</div>
+      ${c.sp}
+    </article>`;
+  }).join("");
+}
+
+/* ================= GRÁFICA PRINCIPAL (canvas, retina) ================= */
+const cv = $("#mainChart"), ctx = cv.getContext("2d");
+let geo = null, animT = reduced?1:0, animStart=null;
+
+function sizeCanvas(){
+  const w = cv.clientWidth, h = Math.max(240, Math.min(340, w*0.42));
+  const dpr = Math.min(window.devicePixelRatio||1, 3);
+  cv.style.height = h+"px";
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w,h};
+}
+function drawChart(){
+  const {w,h} = sizeCanvas();
+  const [a,b] = PERIODS[state.period];
+  const n = b-a+1;
+  const padL=52, padR=58, padT=14, padB=30;
+  const iw = w-padL-padR, ih = h-padT-padB;
+  const x = i => n===1 ? padL+iw/2 : padL + (i/(n-1))*iw;
+  const slotW = iw/Math.max(n,1);
+  const barW = Math.min(46, slotW*0.5);
+  ctx.clearRect(0,0,w,h);
+  ctx.font = "600 11px -apple-system,BlinkMacSystemFont,sans-serif";
+
+  const showV = state.type!=="trafico", showT = state.type!=="ventas";
+  const teal="#64D2FF", orange="#FF9F0A", blue="#0A84FF",
+        t3="#5E6878", hair="rgba(255,255,255,.08)";
+
+  const mode = state.chart;
+  const red = "#FF453A";
+  const conv = D.ventas.conv.slice(a,b+1);
+  const cpr  = D.ventas.cpr.slice(a,b+1);
+  const spV  = D.ventas.spend.slice(a,b+1);
+  const spT  = D.trafico.spend.slice(a,b+1);
+
+  // grid + month labels
+  ctx.strokeStyle = hair; ctx.lineWidth=1;
+  for(let g=0; g<=3; g++){
+    const gy = padT + ih*(g/3);
+    ctx.beginPath(); ctx.moveTo(padL,gy); ctx.lineTo(w-padR,gy); ctx.stroke();
+  }
+  ctx.fillStyle = t3; ctx.textAlign="center";
+  for(let i=0;i<n;i++) ctx.fillText(MONTHS[a+i], x(i), h-10);
+
+  geo = {x, n, a, padT, ih, padL, padR, w, h};
+
+  if(mode==="dual"){
+    const maxC = Math.max(...D.ventas.conv)*1.12;
+    const maxP = Math.max(...D.ventas.cpr)*1.15;
+    // axis labels
+    ctx.textAlign="right"; ctx.fillStyle=teal;
+    for(let g=0; g<=3; g++) ctx.fillText(nf.format(Math.round(maxC*(1-g/3))), padL-8, padT+ih*(g/3)+4);
+    ctx.textAlign="left"; ctx.fillStyle=red;
+    for(let g=0; g<=3; g++) ctx.fillText("$"+(Math.round(maxP*(1-g/3)/100)/10).toFixed(1).replace(".",",")+"K", w-padR+8, padT+ih*(g/3)+4);
+    if(showV){
+      // bars: conversaciones
+      conv.forEach((v,i)=>{
+        const bh = (v/maxC)*ih*animT;
+        const bx = x(i)-barW/2, by = padT+ih-bh;
+        const grad = ctx.createLinearGradient(0,by,0,padT+ih);
+        grad.addColorStop(0,teal); grad.addColorStop(1,"rgba(100,210,255,.25)");
+        ctx.fillStyle=grad;
+        roundRect(bx,by,barW,bh,7); ctx.fill();
+      });
+      drawCprLine(cpr, maxP, x, padT, ih, red);
+    } else {
+      ctx.fillStyle=t3; ctx.textAlign="center";
+      ctx.fillText("Las conversaciones y el costo por resultado aplican solo a campañas de ventas", w/2, padT+ih/2);
+    }
+  } else {
+    // INVERSIÓN MENSUAL (barras apiladas ventas/tráfico) + línea costo por resultado
+    const maxS = Math.max(...D.ventas.spend.map((v,i)=>v+D.trafico.spend[i]))*1.12;
+    const maxP = Math.max(...D.ventas.cpr)*1.15;
+    ctx.textAlign="right"; ctx.fillStyle=t3;
+    for(let g=0; g<=3; g++) ctx.fillText("$"+(maxS*(1-g/3)/1e6).toFixed(1).replace(".",",")+"M", padL-8, padT+ih*(g/3)+4);
+    if(showV){
+      ctx.textAlign="left"; ctx.fillStyle=red;
+      for(let g=0; g<=3; g++) ctx.fillText("$"+(Math.round(maxP*(1-g/3)/100)/10).toFixed(1).replace(".",",")+"K", w-padR+8, padT+ih*(g/3)+4);
+    }
+    for(let i=0;i<n;i++){
+      let yCur = padT+ih;
+      const segs = [];
+      if(showV) segs.push({v:spV[i], c:orange, a:.55});
+      if(showT) segs.push({v:spT[i], c:blue, a:.75});
+      segs.forEach(s=>{
+        const bh=(s.v/maxS)*ih*animT;
+        if(bh<=0) return;
+        ctx.fillStyle=s.c; ctx.globalAlpha=s.a;
+        roundRect(x(i)-barW/2, yCur-bh, barW, bh, 5); ctx.fill();
+        ctx.globalAlpha=1; yCur-=bh;
+      });
+    }
+    if(showV) drawCprLine(cpr, maxP, x, padT, ih, red);
+  }
+
+  // scrub line
+  if(state.scrub!=null){
+    const sx = x(state.scrub);
+    ctx.strokeStyle = t3; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(sx,padT); ctx.lineTo(sx,padT+ih); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+function drawCprLine(cpr, maxP, x, padT, ih, orange){
+  ctx.strokeStyle=orange; ctx.lineWidth=2.5; ctx.lineJoin="round"; ctx.lineCap="round";
+  ctx.beginPath();
+  cpr.forEach((v,i)=>{ const py = padT+ih-(v/maxP)*ih*animT; i?ctx.lineTo(x(i),py):ctx.moveTo(x(i),py); });
+  ctx.stroke();
+  cpr.forEach((v,i)=>{
+    const py = padT+ih-(v/maxP)*ih*animT;
+    ctx.fillStyle="#141924"; ctx.beginPath(); ctx.arc(x(i),py,4.5,0,7); ctx.fill();
+    ctx.strokeStyle=orange; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x(i),py,4.5,0,7); ctx.stroke();
+  });
+}
+function roundRect(x,y,w,h,r){
+  r=Math.min(r,h/2,w/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function animateChart(){
+  if(reduced){ animT=1; drawChart(); return; }
+  animT=0; animStart=null;
+  const step = t => {
+    if(!animStart) animStart=t;
+    animT = Math.min(1,(t-animStart)/650);
+    animT = 1-Math.pow(1-animT,3);
+    drawChart();
+    if(animT<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* scrub interaction (Apple Stocks style) */
+function updateReadout(){
+  const [a,b] = PERIODS[state.period];
+  const showV = state.type!=="trafico", showT = state.type!=="ventas";
+  const spendOf = m => (showV?D.ventas.spend[m]:0)+(showT?D.trafico.spend[m]:0);
+  if(state.scrub==null){
+    const conv = sum(D.ventas.conv,a,b), spendV = sum(D.ventas.spend,a,b);
+    let spend = 0; for(let m=a;m<=b;m++) spend += spendOf(m);
+    $("#roMonth").textContent = state.period==="all" ? "Semestre" : `${MONTHS[a]}–${MONTHS[b]}`;
+    $("#roSpend").textContent = fmtM(spend);
+    $("#roConv").textContent = showV ? nf.format(conv) : "—";
+    $("#roCpr").textContent = showV ? fmt$(spendV/conv) : "—";
+  } else {
+    const m = a+state.scrub;
+    $("#roMonth").textContent = MONTHS[m]+" 2026";
+    $("#roSpend").textContent = fmtM(spendOf(m));
+    $("#roConv").textContent = showV ? nf.format(D.ventas.conv[m]) : "—";
+    $("#roCpr").textContent = showV ? fmt$(D.ventas.cpr[m]) : "—";
+  }
+}
+
+/* ================= TOOLTIP HELPER ================= */
+const nf2 = new Intl.NumberFormat("es-CO");
+let tipTimers = {};
+
+function showTip(tipEl, wrapEl, xPx, yPx, rows, month, nota){
+  if(!tipEl || !wrapEl) return;
+  // contenido
+  tipEl.innerHTML =
+    `<div class="chart-tip-month">${month}</div>` +
+    rows.map(r=>`<div class="chart-tip-row">
+      <span class="chart-tip-lbl">${r.l}</span>
+      <span class="chart-tip-val" style="color:${r.c}">${r.v}</span>
+    </div>`).join("") +
+    (nota ? `<div class="chart-tip-nota">${nota}</div>` : "");
+
+  // posición: centrar sobre la barra, empujar si sale de los bordes
+  const wrap = wrapEl.getBoundingClientRect();
+  const tw = 180; // ancho estimado del tooltip
+  let left = xPx - tw/2;
+  left = Math.max(6, Math.min(left, wrapEl.offsetWidth - tw - 6));
+  const top = Math.max(6, yPx - 110);
+
+  tipEl.style.left = left + "px";
+  tipEl.style.top  = top  + "px";
+  tipEl.classList.add("show");
+
+  // en touch: auto-ocultar tras 3s; en mouse: sin timer
+  clearTimeout(tipTimers[tipEl.id]);
+  if(window._lastPointerType === "touch"){
+    tipTimers[tipEl.id] = setTimeout(()=>hideTip(tipEl), 3000);
+  }
+}
+function hideTip(tipEl){
+  if(!tipEl) return;
+  tipEl.classList.remove("show");
+}
+
+
+window._lastPointerType = "mouse";
+window.addEventListener("pointerdown", e=>{ window._lastPointerType = e.pointerType; }, {capture:true, passive:true});
+function mainTipRows(m){
+  const [a] = PERIODS[state.period];
+  const mi  = a + m;
+  const showV = state.type!=="trafico", showT = state.type!=="ventas";
+  const rows = [];
+  if(state.chart==="inv"){
+    if(showV) rows.push({l:"Inv. ventas",  c:"#FF9F0A", v:fmtM(D.ventas.spend[mi])});
+    if(showT) rows.push({l:"Inv. tráfico", c:"#0A84FF", v:fmtM(D.trafico.spend[mi])});
+    if(showV) rows.push({l:"Costo/result.",c:"#FF453A", v:"$"+nf2.format(D.ventas.cpr[mi])});
+  } else {
+    if(showV){
+      rows.push({l:"Conversaciones",c:"#64D2FF", v:nf2.format(D.ventas.conv[mi])});
+      rows.push({l:"Costo/result.", c:"#FF453A", v:"$"+nf2.format(D.ventas.cpr[mi])});
+    }
+  }
+  return rows;
+}
+function scrubFrom(clientX, yPx){
+  if(!geo) return;
+  const r = cv.getBoundingClientRect();
+  const px = clientX - r.left;
+  let best=0,bd=1e9;
+  for(let i=0;i<geo.n;i++){ const d=Math.abs(geo.x(i)-px); if(d<bd){bd=d;best=i;} }
+  if(state.scrub!==best || yPx!=null){
+    state.scrub=best; updateReadout(); drawChart();
+    const [a]=PERIODS[state.period];
+    showTip(document.getElementById("mainTip"), cv.parentElement, geo.x(best), yPx??50,
+      mainTipRows(best), MONTHS[a+best]+" 2026", null);
+  }
+}
+cv.addEventListener("pointerdown", e=>{
+  cv.setPointerCapture(e.pointerId);
+  const r=cv.getBoundingClientRect();
+  scrubFrom(e.clientX, e.clientY-r.top);
+});
+cv.addEventListener("pointermove", e=>{
+  if(e.pointerType==="mouse"){
+    const r=cv.getBoundingClientRect();
+    scrubFrom(e.clientX, e.clientY-r.top);
+  }
+});
+const endScrub = ()=>{
+  if(window._lastPointerType==="mouse"){
+    state.scrub=null; updateReadout(); drawChart();
+    hideTip(document.getElementById("mainTip"));
+  }
+};
+cv.addEventListener("pointerup", e=>{ if(e.pointerType==="touch"){ state.scrub=null; updateReadout(); drawChart(); } else endScrub(); });
+cv.addEventListener("pointercancel", ()=>{ state.scrub=null; updateReadout(); drawChart(); hideTip(document.getElementById("mainTip")); });
+cv.addEventListener("pointerleave", e=>{ if(e.pointerType==="mouse") endScrub(); });
+
+/* ================= TABLA CAMPAÑAS ================= */
+function renderTable(){
+  const rows = D.camps.filter(c=> state.type==="todas" || c.t===state.type);
+  $("#campTable tbody").innerHTML = rows.map(c=>`
+    <tr>
+      <td><span class="name"><span class="sw" style="background:${c.t==="ventas"?"var(--orange)":"var(--blue)"}"></span>${c.n}</span><span class="tag">${c.tag}</span></td>
+      <td>${fmtM(c.spend)}</td>
+      <td>${nf.format(c.clicks)}</td>
+      <td>${fmt$(c.cpc)}</td>
+      <td style="color:${c.ctr>4?"var(--green)":"inherit"}">${c.ctr.toFixed(2).replace(".",",")}%</td>
+    </tr>`).join("");
+}
+
+/* ================= EMBUDO ================= */
+function renderFunnel(){
+  const f = D.funnel, max=f.impresiones;
+  const steps = [
+    {l:"Impresiones", v:f.impresiones, c:"var(--text-3)"},
+    {l:"Alcance", v:f.alcance, c:"var(--teal)", rate:`<b>${(f.impresiones/f.alcance).toFixed(2).replace(".",",")}</b> impresiones por persona (frecuencia media)`},
+    {l:"Clics", v:f.clics, c:"var(--blue)", rate:`CTR global <b>${(f.clics/f.impresiones*100).toFixed(2).replace(".",",")}%</b>`},
+    {l:"Conversaciones", v:f.conversaciones, c:"var(--orange)", rate:`<b>${(f.conversaciones/f.clics*100).toFixed(1).replace(".",",")}%</b> de los clics inician conversación`},
+    {l:"Ventas", v:null, c:"var(--red)", rate:`<b>Sin datos.</b> Conectar CRM / etiquetas de WhatsApp para cerrar el embudo`}
+  ];
+  $("#funnel").innerHTML = steps.map(s=>`
+    ${s.rate?`<div class="f-rate">↳ ${s.rate}</div>`:""}
+    <div class="f-row">
+      <span class="f-lbl">${s.l}</span>
+      <div class="f-bar"><div class="f-fill" data-w="${s.v? Math.max(2,(s.v/max*100)) : 0}" style="background:${s.c}"></div></div>
+      <span class="f-val">${s.v? nf.format(s.v) : "?"}</span>
+    </div>`).join("");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    $$("#funnel .f-fill").forEach(el=> el.style.width = el.dataset.w+"%");
+  }));
+}
+
+/* ================= ALERTAS ================= */
+const ALERTS = [
+  { sev:"crit", t:"Fatiga del anuncio", k:"Frecuencia 3,05 · costo +35% con gasto plano (ene→mar)",
+    causa:"«VENTAS ANTERIOR» corrió 152 días sin rotación creativa sobre la misma audiencia de Antioquia. Para marzo, cada usuario había visto los anuncios más de 3 veces y el costo por resultado pasó de $1.301 a $1.758 sin aumentar el presupuesto.",
+    accion:"Rotar creativos cada 4–6 semanas o al superar frecuencia 2,5. Activar Dynamic Creative (3–5 visuales × 3 textos × 2 CTA) para que Meta combata la fatiga automáticamente." },
+  { sev:"crit", t:"Embudo sin cierre medible", k:"2.715 conversaciones · 0 ventas registradas",
+    causa:"No existe conexión entre la conversación de WhatsApp y la venta cerrada. Sin tasa de cierre ni ticket promedio es imposible calcular CAC y ROAS, y por tanto saber si los $2.687 por conversación de mayo son rentables.",
+    accion:"Implementar etiquetado en WhatsApp Business (lead → venta) o CRM ligero. Definir CPA y ROAS objetivo. Es el prerequisito de todas las demás optimizaciones." },
+  { sev:"warn", t:"Estructura unidireccional", k:"1 conjunto de anuncios por campaña · 0 tests A/B",
+    causa:"Cada campaña depende de un único conjunto: una sola audiencia, una sola apuesta. No hay pruebas de audiencia, creativo ni ubicación documentadas en todo el semestre — las decisiones se toman sin evidencia comparativa.",
+    accion:"Mínimo 2–3 conjuntos por campaña (amplio Advantage+, intereses, retargeting) y un test A/B quincenal con hipótesis escrita y presupuesto fijo." },
+  { sev:"warn", t:"Escalado vertical ineficiente", k:"Gasto +135% → costo por resultado +53% (mar→may)",
+    causa:"El presupuesto extra entró por «WHATSAPP ESTEBAN» (CPC $1.043, +28% vs la campaña anterior) sobre la misma audiencia antioqueña, generando solapamiento de subasta y rendimientos decrecientes. Un escalado sano deteriora 15–30%, no 53%.",
+    accion:"Escalar horizontal: retargeting de los 105K alcanzados por tráfico, lookalike de clientes, piloto serio en Valle del Cauca. Subir presupuestos máx. +20% por semana para no resetear el aprendizaje." },
+  { sev:"warn", t:"Audiencias nuevas sin validar", k:"97% del gasto en Antioquia · Tuluá probado solo 6 días",
+    causa:"«EXPECTATIVA TULUA» mostró el mejor CTR de la cuenta (6,13%) pero se apagó con ~$168K gastados — ninguna campaña sale de fase de aprendizaje en 6 días. La señal es prometedora pero estadísticamente frágil.",
+    accion:"Piloto de 4 semanas en Valle del Cauca con presupuesto estable, geo acotada (corregir spillover a Cauca) y medición de conversaciones, no solo clics." },
+  { sev:"opp", t:"Activo creativo desaprovechado", k:"CTR 5,4–6,1% en tráfico (4–6× benchmark) · CPC $64–105",
+    causa:"Los creativos de tráfico conectan excepcionalmente, pero esas audiencias calientes (interactores, visitantes) no alimentan a las campañas de ventas: cada campaña pesca en frío.",
+    accion:"Crear audiencias personalizadas de interactores 30–90 días y reimpactarlas con campañas BOFU. Reasignar presupuesto 50% BOFU / 30% MOFU / 20% TOFU. Potencial: recuperar el costo por conversación de enero (~$1.300) manteniendo el volumen de mayo." }
+];
+function renderAlerts(){
+  $("#alerts").innerHTML = ALERTS.map((a,i)=>`
+    <article class="alert ${a.sev}" id="al${i}">
+      <button class="a-btn" aria-expanded="false" aria-controls="ab${i}" onclick="toggleAlert(${i})">
+        <span class="pulse" aria-hidden="true"></span>
+        <span class="a-tt"><h3>${a.t}</h3><div class="a-kpi">${a.k}</div></span>
+        <svg class="a-chev" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5 2.5 L9.5 7 L5 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="a-body" id="ab${i}"><div class="a-inner"><div>
+        <div class="a-sec"><b>Causa probable</b><p>${a.causa}</p></div>
+        <div class="a-sec act"><b>Acción recomendada</b><p>${a.accion}</p></div>
+      </div></div></div>
+    </article>`).join("");
+}
+window.toggleAlert = i => {
+  const el = $("#al"+i), open = el.classList.toggle("open");
+  el.querySelector(".a-btn").setAttribute("aria-expanded", open);
+};
+
+/* ================= COMUNIDAD: SEGUIDORES VS INVERSIÓN ================= */
+const COM = {
+  inv:[758430,728620,791170,1230305,1856804],
+  seg:[327,286,306,3100,853],
+  nota:["Solo ventas","Solo ventas","Solo ventas (fatiga)","+ Tráfico activo","Solo ventas escaló"]
+};
+const cv2 = $("#comChart"), ctx2 = cv2.getContext("2d");
+let geo2=null, scrub2=null, animT2=reduced?1:0;
+function rr2(c,x,y,w,h,r){
+  r=Math.min(r,h/2,w/2); c.beginPath();
+  c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();
+}
+function drawCom(){
+  const w=cv2.clientWidth, h=Math.max(250,Math.min(350,w*0.44));
+  const dpr=Math.min(devicePixelRatio||1,3);
+  cv2.style.height=h+"px"; cv2.width=Math.round(w*dpr); cv2.height=Math.round(h*dpr);
+  ctx2.setTransform(dpr,0,0,dpr,0,0);
+  const n=5, padL=50, padR=56, padT=26, padB=44;
+  const iw=w-padL-padR, ih=h-padT-padB;
+  const x=i=>padL+(i/(n-1))*iw;
+  const barW=Math.min(48,(iw/n)*0.52);
+  const purple="#BF5AF2", orange="#FF9F0A",
+        t3="#5E6878", hair="rgba(255,255,255,.08)";
+  ctx2.clearRect(0,0,w,h);
+  ctx2.font="600 11px -apple-system,BlinkMacSystemFont,sans-serif";
+  const maxS=Math.max(...COM.seg)*1.15, maxI=Math.max(...COM.inv)*1.15;
+  ctx2.strokeStyle=hair; ctx2.lineWidth=1;
+  for(let g=0;g<=3;g++){const gy=padT+ih*(g/3);
+    ctx2.beginPath();ctx2.moveTo(padL,gy);ctx2.lineTo(w-padR,gy);ctx2.stroke();}
+  ctx2.fillStyle=t3; ctx2.textAlign="center";
+  for(let i=0;i<n;i++) ctx2.fillText(MONTHS[i], x(i), h-26);
+  ctx2.textAlign="right"; ctx2.fillStyle=purple;
+  for(let g=0;g<=3;g++) ctx2.fillText(nf.format(Math.round(maxS*(1-g/3))), padL-8, padT+ih*(g/3)+4);
+  ctx2.textAlign="left"; ctx2.fillStyle=orange;
+  for(let g=0;g<=3;g++) ctx2.fillText("$"+(maxI*(1-g/3)/1e6).toFixed(1).replace(".",",")+"M", w-padR+8, padT+ih*(g/3)+4);
+  // barras seguidores
+  COM.seg.forEach((v,i)=>{
+    const bh=(v/maxS)*ih*animT2, bx=x(i)-barW/2, by=padT+ih-bh;
+    const grad=ctx2.createLinearGradient(0,by,0,padT+ih);
+    grad.addColorStop(0,purple); grad.addColorStop(1,"rgba(191,90,242,.25)");
+    ctx2.fillStyle=grad; rr2(ctx2,bx,by,barW,bh,7); ctx2.fill();
+  });
+  // anotaciones
+  ctx2.textAlign="center"; ctx2.font="700 10px -apple-system,BlinkMacSystemFont,sans-serif";
+  ctx2.fillStyle="#30D158";
+  ctx2.fillText("\u25B2 trafico activo", x(3), padT+ih-(COM.seg[3]/maxS)*ih*animT2-8);
+  ctx2.fillStyle="#FF453A";
+  ctx2.fillText("\u25BC solo ventas", x(4), padT+ih-(COM.seg[4]/maxS)*ih*animT2-8);
+  ctx2.font="600 11px -apple-system,BlinkMacSystemFont,sans-serif";
+  // línea inversión
+  ctx2.strokeStyle=orange; ctx2.lineWidth=2.5; ctx2.lineJoin="round"; ctx2.lineCap="round";
+  ctx2.beginPath();
+  COM.inv.forEach((v,i)=>{const py=padT+ih-(v/maxI)*ih*animT2; i?ctx2.lineTo(x(i),py):ctx2.moveTo(x(i),py);});
+  ctx2.stroke();
+  COM.inv.forEach((v,i)=>{
+    const py=padT+ih-(v/maxI)*ih*animT2;
+    ctx2.fillStyle="#141924"; ctx2.beginPath(); ctx2.arc(x(i),py,4.5,0,7); ctx2.fill();
+    ctx2.strokeStyle=orange; ctx2.lineWidth=2.5; ctx2.beginPath(); ctx2.arc(x(i),py,4.5,0,7); ctx2.stroke();
+  });
+  // notas de campaña bajo eje
+  ctx2.fillStyle=t3; ctx2.font="600 9.5px -apple-system,BlinkMacSystemFont,sans-serif";
+  for(let i=0;i<n;i++) ctx2.fillText(COM.nota[i], x(i), h-12);
+  geo2={x,n};
+  if(scrub2!=null){
+    const sx=x(scrub2);
+    ctx2.strokeStyle=t3; ctx2.lineWidth=1; ctx2.setLineDash([4,4]);
+    ctx2.beginPath(); ctx2.moveTo(sx,padT); ctx2.lineTo(sx,padT+ih); ctx2.stroke();
+    ctx2.setLineDash([]);
+  }
+}
+function animCom(){
+  if(reduced){animT2=1;drawCom();return;}
+  animT2=0; let st=null;
+  const step=t=>{ if(!st)st=t; animT2=Math.min(1,(t-st)/650); animT2=1-Math.pow(1-animT2,3);
+    drawCom(); if(animT2<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function comReadout(){
+  const tS=COM.seg.reduce((a,b)=>a+b), tI=COM.inv.reduce((a,b)=>a+b);
+  if(scrub2==null){
+    $("#cmMonth").textContent="Semestre";
+    $("#cmSeg").textContent=nf.format(tS);
+    $("#cmInv").textContent=fmtM(tI);
+    $("#cmCps").textContent=fmt$(tI/tS);
+  } else {
+    $("#cmMonth").textContent=MONTHS[scrub2]+" 2026";
+    $("#cmSeg").textContent=nf.format(COM.seg[scrub2]);
+    $("#cmInv").textContent=fmtM(COM.inv[scrub2]);
+    $("#cmCps").textContent=fmt$(COM.inv[scrub2]/COM.seg[scrub2]);
+  }
+}
+function comTipRows(i){
+  const cps = COM.inv[i]/COM.seg[i];
+  return [
+    {l:"Seguidores",     c:"#BF5AF2", v:nf2.format(COM.seg[i])},
+    {l:"Inversión",      c:"#FF9F0A", v:fmtM(COM.inv[i])},
+    {l:"Costo/seguidor", c:"#64D2FF", v:"$"+nf2.format(Math.round(cps))}
+  ];
+}
+function scrubCom(cx, yPx){
+  if(!geo2)return;
+  const r=cv2.getBoundingClientRect(), px=cx-r.left;
+  let best=0,bd=1e9;
+  for(let i=0;i<geo2.n;i++){const d=Math.abs(geo2.x(i)-px); if(d<bd){bd=d;best=i;}}
+  if(scrub2!==best || yPx!=null){
+    scrub2=best; comReadout(); drawCom();
+    showTip(document.getElementById("comTip"), cv2.parentElement, geo2.x(best), yPx??50,
+      comTipRows(best), MONTHS[best]+" 2026", COM.nota[best]);
+  }
+}
+cv2.addEventListener("pointerdown",e=>{
+  cv2.setPointerCapture(e.pointerId);
+  const r=cv2.getBoundingClientRect();
+  scrubCom(e.clientX, e.clientY-r.top);
+});
+cv2.addEventListener("pointermove",e=>{
+  if(e.pointerType==="mouse"){
+    const r=cv2.getBoundingClientRect();
+    scrubCom(e.clientX, e.clientY-r.top);
+  }
+});
+const endCom=()=>{
+  if(window._lastPointerType==="mouse"){
+    scrub2=null; comReadout(); drawCom();
+    hideTip(document.getElementById("comTip"));
+  }
+};
+cv2.addEventListener("pointerup",e=>{ if(e.pointerType==="touch"){ scrub2=null; comReadout(); drawCom(); } else endCom(); });
+cv2.addEventListener("pointercancel",()=>{ scrub2=null; comReadout(); drawCom(); hideTip(document.getElementById("comTip")); });
+cv2.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")endCom();});
+
+/* ================= LEYENDA ================= */
+function renderLegend(){
+  const showV = state.type!=="trafico", showT = state.type!=="ventas";
+  const items = [];
+  if(state.chart==="inv"){
+    if(showV) items.push(`<span class="li"><span class="sw-bar" style="background:var(--orange);opacity:.75"></span>Inversión ventas <span class="axis">· eje izq (millones COP)</span></span>`);
+    if(showT) items.push(`<span class="li"><span class="sw-bar" style="background:var(--blue);opacity:.85"></span>Inversión tráfico <span class="axis">· eje izq (millones COP)</span></span>`);
+    if(showV) items.push(`<span class="li"><span class="sw-line" style="color:var(--red);border-color:var(--red)"></span>Costo por resultado <span class="axis">· eje der (COP, en miles)</span></span>`);
+  } else {
+    if(showV){
+      items.push(`<span class="li"><span class="sw-bar" style="background:var(--teal)"></span>Conversaciones iniciadas <span class="axis">· eje izq (cantidad)</span></span>`);
+      items.push(`<span class="li"><span class="sw-line" style="color:var(--red);border-color:var(--red)"></span>Costo por resultado <span class="axis">· eje der (COP, en miles)</span></span>`);
+    }
+  }
+  document.getElementById("chartLegend").innerHTML = items.join("");
+}
+
+/* ================= VALIDACIÓN INTERNA ================= */
+const pedidos = [null,null,null,null,null]; // dato a completar por el equipo KONICO
+function renderValid(){
+  $("#validTable tbody").innerHTML = MONTHS.map((m,i)=>`
+    <tr>
+      <td><span class="name">${m} 2026</span></td>
+      <td>${nf.format(D.ventas.conv[i])}</td>
+      <td><input class="v-input" type="number" inputmode="numeric" min="0" max="${D.ventas.conv[i]}"
+           placeholder="¿…?" aria-label="Pedidos reales de ${m}" data-i="${i}"
+           value="${pedidos[i]??""}"></td>
+      <td id="vRate${i}"><span class="empty">—</span></td>
+      <td id="vCpo${i}"><span class="empty">—</span></td>
+    </tr>`).join("");
+}
+function recalcValid(){
+  let totC=0, totP=0, totS=0, any=false;
+  MONTHS.forEach((_,i)=>{
+    const p = pedidos[i];
+    const rate = $("#vRate"+i), cpo = $("#vCpo"+i);
+    if(p!=null && p>=0){
+      any=true; totC+=D.ventas.conv[i]; totP+=p; totS+=D.ventas.spend[i];
+      rate.innerHTML = `<span class="calc">${(p/D.ventas.conv[i]*100).toFixed(1).replace(".",",")}%</span>`;
+      cpo.innerHTML = p>0 ? `<span class="calc">${fmt$(D.ventas.spend[i]/p)}</span>` : `<span class="empty">∞</span>`;
+    } else {
+      rate.innerHTML = `<span class="empty">—</span>`;
+      cpo.innerHTML = `<span class="empty">—</span>`;
+    }
+  });
+  $("#vTotals").innerHTML = any && totP>0
+    ? `Acumulado: <b>${nf.format(totP)}</b> pedidos de <b>${nf.format(totC)}</b> conversaciones → tasa de cierre <b>${(totP/totC*100).toFixed(1).replace(".",",")}%</b> · costo por pedido <b>${fmt$(totS/totP)}</b>`
+    : `Completa los pedidos de al menos un mes para calcular la tasa de cierre y el costo real por pedido.`;
+}
+$("#validTable").addEventListener("input", e=>{
+  const inp = e.target.closest(".v-input"); if(!inp) return;
+  const i = +inp.dataset.i, v = inp.value.trim();
+  pedidos[i] = v==="" ? null : Math.max(0, parseInt(v,10)||0);
+  recalcValid();
+});
+$("#vCopy").addEventListener("click", async ()=>{
+  const lines = MONTHS.map((m,i)=>{
+    const p = pedidos[i];
+    return `• ${m} 2026 — ${nf.format(D.ventas.conv[i])} conversaciones iniciadas → ¿pedidos reales?: ${p!=null? p : "_____"}`;
+  });
+  const txt = `Hola equipo KONICO 👋\n\nPara cerrar el análisis de Meta Ads necesitamos un dato que solo ustedes tienen:\n\n¿Cuántos PEDIDOS REALES se generaron a partir de las conversaciones de WhatsApp iniciadas cada mes?\n\n${lines.join("\n")}\n\nCon ese dato calculamos la tasa real de cierre (conversación → venta) y el costo verdadero por pedido, para saber si la inversión publicitaria está siendo rentable y dónde optimizar. ¡Gracias!`;
+  try{
+    await navigator.clipboard.writeText(txt);
+    const b=$("#vCopy"); b.textContent="Copiado ✓"; b.classList.add("ok");
+    setTimeout(()=>{ b.textContent="Copiar solicitud para el equipo"; b.classList.remove("ok"); },2200);
+  }catch(err){
+    prompt("Copia el texto manualmente:", txt);
+  }
+});
+
+/* ================= FILTROS ================= */
+$("#segPeriod").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#segPeriod button").forEach(x=>{x.classList.toggle("on",x===b); x.setAttribute("aria-selected",x===b);});
+  state.period = b.dataset.p; state.scrub=null;
+  renderKPIs(); updateReadout(); animateChart();
+});
+$("#chipsType").addEventListener("click", e=>{
+  const b = e.target.closest(".chip"); if(!b) return;
+  $$("#chipsType .chip").forEach(x=>x.classList.toggle("on",x===b));
+  state.type = b.dataset.k;
+  renderKPIs(); renderTable(); renderLegend(); updateReadout(); drawChart();
+});
+$("#segChart").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if(!b) return;
+  $$("#segChart button").forEach(x=>x.classList.toggle("on",x===b));
+  state.chart = b.dataset.m; renderLegend(); animateChart();
+});
+
+/* ================= INIT / RESIZE ================= */
+let rT;
+window.addEventListener("resize", ()=>{ clearTimeout(rT); rT=setTimeout(()=>{drawChart();drawCom();},120); });
+window.addEventListener("orientationchange", ()=> setTimeout(()=>{drawChart();drawCom();},250));
+matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", ()=>{ renderKPIs(); drawChart(); drawCom(); });
+
+renderKPIs(); renderTable(); renderFunnel(); renderAlerts(); renderValid(); recalcValid(); renderLegend(); updateReadout(); animateChart(); comReadout(); animCom();
+</script>
+</body>
+</html>
